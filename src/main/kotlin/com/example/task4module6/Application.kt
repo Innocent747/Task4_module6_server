@@ -6,6 +6,7 @@ import io.ktor.client.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.plugins.logging.*
+import io.ktor.client.plugins.timeout.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
@@ -39,6 +40,14 @@ fun Application.module() {
         install(io.ktor.client.plugins.contentnegotiation.ContentNegotiation) {
             json(Json { ignoreUnknownKeys = true; isLenient = true })
         }
+
+        install(HttpTimeout) {
+            // Nobel API иногда отвечает не мгновенно. Дадим запас.
+            connectTimeoutMillis = 10_000
+            requestTimeoutMillis = 60_000
+            socketTimeoutMillis = 60_000
+        }
+
         install(Logging) {
             level = LogLevel.INFO
         }
