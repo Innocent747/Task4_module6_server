@@ -1,0 +1,14 @@
+### Health check
+GET http://localhost:8080/
+
+### Categories
+GET http://localhost:8080/api/categories
+
+### Years
+GET http://localhost:8080/api/years
+
+### Prizes list (query params: year, category, limit, offset)
+GET http://localhost:8080/api/prizes?year=2023&category=physics&limit=5&offset=0
+
+### Prize details
+GET http://localhost:8080/api/prizes/2023/physics
