@@ -16,8 +16,17 @@ import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.plugins.cors.routing.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import org.slf4j.event.Level
+
+@Serializable
+private data class HealthResponse(
+    val status: String,
+    val service: String,
+    val version: String,
+    val endpoints: List<String>
+)
 
 fun main() {
     embeddedServer(Netty, port = 8080, host = "0.0.0.0", module = Application::module)
@@ -59,11 +68,11 @@ fun Application.module() {
         // Health check
         get("/") {
             call.respond(
-                mapOf(
-                    "status" to "ok",
-                    "service" to "Nobel Prize API",
-                    "version" to "1.0",
-                    "endpoints" to listOf(
+                HealthResponse(
+                    status = "ok",
+                    service = "Nobel Prize API",
+                    version = "1.0",
+                    endpoints = listOf(
                         "GET /api/prizes",
                         "GET /api/prizes?year=2023&category=physics&limit=20&offset=0",
                         "GET /api/prizes/{year}/{category}",
