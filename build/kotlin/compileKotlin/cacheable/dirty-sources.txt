@@ -1,0 +1,4 @@
+C:\Users\egorl\AndroidStudioProjects\Task4module6\src\main\kotlin\com\example\task4module6\routes\NobelRoutes.kt
+C:\Users\egorl\AndroidStudioProjects\Task4module6\src\main\kotlin\com\example\task4module6\Application.kt
+C:\Users\egorl\AndroidStudioProjects\Task4module6\src\main\kotlin\com\example\task4module6\models\Models.kt
+C:\Users\egorl\AndroidStudioProjects\Task4module6\src\main\kotlin\com\example\task4module6\service\NobelService.kt
