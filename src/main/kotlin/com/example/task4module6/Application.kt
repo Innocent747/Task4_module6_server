@@ -1,6 +1,5 @@
 package com.example.task4module6
 
-import com.example.task4module6.models.NobelPrizesResponse
 import com.example.task4module6.routes.nobelRoutes
 import com.example.task4module6.service.NobelService
 import io.ktor.client.*
@@ -26,8 +25,9 @@ fun main() {
 }
 
 fun Application.module() {
+    // IMPORTANT: avoid name clash between client ContentNegotiation and server ContentNegotiation
     val httpClient = HttpClient(CIO) {
-        install(ContentNegotiation) {
+        install(io.ktor.client.plugins.contentnegotiation.ContentNegotiation) {
             json(Json { ignoreUnknownKeys = true; isLenient = true })
         }
         install(Logging) {
@@ -37,7 +37,7 @@ fun Application.module() {
 
     val nobelService = NobelService(httpClient)
 
-    install(ContentNegotiation) {
+    install(io.ktor.server.plugins.contentnegotiation.ContentNegotiation) {
         json(Json { prettyPrint = true; ignoreUnknownKeys = true })
     }
 
@@ -58,18 +58,20 @@ fun Application.module() {
     routing {
         // Health check
         get("/") {
-            call.respond(mapOf(
-                "status" to "ok",
-                "service" to "Nobel Prize API",
-                "version" to "1.0",
-                "endpoints" to listOf(
-                    "GET /api/prizes",
-                    "GET /api/prizes?year=2023&category=physics&limit=20&offset=0",
-                    "GET /api/prizes/{year}/{category}",
-                    "GET /api/categories",
-                    "GET /api/years"
+            call.respond(
+                mapOf(
+                    "status" to "ok",
+                    "service" to "Nobel Prize API",
+                    "version" to "1.0",
+                    "endpoints" to listOf(
+                        "GET /api/prizes",
+                        "GET /api/prizes?year=2023&category=physics&limit=20&offset=0",
+                        "GET /api/prizes/{year}/{category}",
+                        "GET /api/categories",
+                        "GET /api/years"
+                    )
                 )
-            ))
+            )
         }
 
         nobelRoutes(nobelService)
