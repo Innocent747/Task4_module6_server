@@ -1,14 +1,26 @@
 ### Health check
 GET http://localhost:8080/
 
-### Categories
-GET http://localhost:8080/api/categories
+### Login (sample credentials: admin/admin)
+POST http://localhost:8080/auth/login
+Content-Type: application/json
 
-### Years
-GET http://localhost:8080/api/years
+{
+  "login": "admin",
+  "password": "admin"
+}
 
-### Prizes list (query params: year, category, limit, offset)
-GET http://localhost:8080/api/prizes?year=2023&category=physics&limit=5&offset=0
+### Paste token from login response
+@token = paste_token_here
 
-### Prize details
-GET http://localhost:8080/api/prizes/2023/physics
+### Protected: Prizes list
+GET http://localhost:8080/prizes?year=2023&category=physics&limit=10&offset=0
+Authorization: Bearer {{token}}
+
+### Protected: Prize details
+GET http://localhost:8080/prizes/2023/physics
+Authorization: Bearer {{token}}
+
+### Protected: Prize laureates
+GET http://localhost:8080/prizes/2023/physics/laureates
+Authorization: Bearer {{token}}
