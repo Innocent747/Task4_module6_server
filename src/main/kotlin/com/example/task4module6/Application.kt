@@ -1,33 +1,21 @@
 package com.example.task4module6
 
-import com.example.task4module6.routes.nobelRoutes
-import com.example.task4module6.service.NobelService
-import io.ktor.client.*
-import io.ktor.client.engine.cio.*
-import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.client.plugins.logging.*
-import io.ktor.client.plugins.timeout.*
-import io.ktor.http.*
-import io.ktor.serialization.kotlinx.json.*
+import com.example.task4module6.data.repository.FilePrizeRepository
+import com.example.task4module6.data.repository.InMemoryUserRepository
+import com.example.task4module6.data.source.ResourcePrizeDataSource
+import com.example.task4module6.plugins.configureCallLogging
+import com.example.task4module6.plugins.configureSecurity
+import com.example.task4module6.plugins.configureSerialization
+import com.example.task4module6.presentation.configureRouting
+import com.example.task4module6.security.JwtConfig
+import com.example.task4module6.security.JwtTokenProvider
+import com.example.task4module6.usecase.GetPrizeDetailsUseCase
+import com.example.task4module6.usecase.GetPrizeLaureatesUseCase
+import com.example.task4module6.usecase.GetPrizesUseCase
+import com.example.task4module6.usecase.LoginUseCase
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
-import io.ktor.server.plugins.calllogging.*
-import io.ktor.server.plugins.contentnegotiation.*
-import io.ktor.server.plugins.cors.routing.*
-import io.ktor.server.response.*
-import io.ktor.server.routing.*
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
-import org.slf4j.event.Level
-
-@Serializable
-private data class HealthResponse(
-    val status: String,
-    val service: String,
-    val version: String,
-    val endpoints: List<String>
-)
 
 fun main() {
     embeddedServer(Netty, port = 8080, host = "0.0.0.0", module = Application::module)
@@ -35,63 +23,26 @@ fun main() {
 }
 
 fun Application.module() {
-    // IMPORTANT: avoid name clash between client ContentNegotiation and server ContentNegotiation
-    val httpClient = HttpClient(CIO) {
-        install(io.ktor.client.plugins.contentnegotiation.ContentNegotiation) {
-            json(Json { ignoreUnknownKeys = true; isLenient = true })
-        }
+    val jwtConfig = JwtConfig()
+    val tokenProvider = JwtTokenProvider(jwtConfig)
 
-        install(HttpTimeout) {
-            // Nobel API иногда отвечает не мгновенно. Дадим запас.
-            connectTimeoutMillis = 10_000
-            requestTimeoutMillis = 60_000
-            socketTimeoutMillis = 60_000
-        }
+    val prizeRepository = FilePrizeRepository(ResourcePrizeDataSource())
+    val userRepository = InMemoryUserRepository()
 
-        install(Logging) {
-            level = LogLevel.INFO
-        }
-    }
+    val getPrizesUseCase = GetPrizesUseCase(prizeRepository)
+    val getPrizeDetailsUseCase = GetPrizeDetailsUseCase(prizeRepository)
+    val getPrizeLaureatesUseCase = GetPrizeLaureatesUseCase(prizeRepository)
+    val loginUseCase = LoginUseCase(userRepository)
 
-    val nobelService = NobelService(httpClient)
-
-    install(io.ktor.server.plugins.contentnegotiation.ContentNegotiation) {
-        json(Json { prettyPrint = true; ignoreUnknownKeys = true })
-    }
-
-    install(CORS) {
-        anyHost()
-        allowHeader(HttpHeaders.ContentType)
-        allowHeader(HttpHeaders.Authorization)
-        allowMethod(HttpMethod.Get)
-        allowMethod(HttpMethod.Post)
-        allowMethod(HttpMethod.Put)
-        allowMethod(HttpMethod.Delete)
-    }
-
-    install(CallLogging) {
-        level = Level.INFO
-    }
-
-    routing {
-        // Health check
-        get("/") {
-            call.respond(
-                HealthResponse(
-                    status = "ok",
-                    service = "Nobel Prize API",
-                    version = "1.0",
-                    endpoints = listOf(
-                        "GET /api/prizes",
-                        "GET /api/prizes?year=2023&category=physics&limit=20&offset=0",
-                        "GET /api/prizes/{year}/{category}",
-                        "GET /api/categories",
-                        "GET /api/years"
-                    )
-                )
-            )
-        }
-
-        nobelRoutes(nobelService)
-    }
+    configureSerialization()
+    configureCallLogging()
+    configureSecurity(jwtConfig)
+    configureRouting(
+        getPrizesUseCase = getPrizesUseCase,
+        getPrizeDetailsUseCase = getPrizeDetailsUseCase,
+        getPrizeLaureatesUseCase = getPrizeLaureatesUseCase,
+        loginUseCase = loginUseCase,
+        tokenProvider = tokenProvider,
+        jwtConfig = jwtConfig
+    )
 }
